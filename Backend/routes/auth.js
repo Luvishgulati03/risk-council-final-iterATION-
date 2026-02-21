@@ -1,0 +1,120 @@
+const router = require('express').Router();
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const db = require('../Db');
+const { JWT_SECRET, authRequired } = require('../middleware/auth');
+
+// POST /api/auth/register
+router.post('/register', async (req, res) => {
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ error: 'All fields required' });
+
+    try {
+        const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+        if (existing.length > 0) return res.status(409).json({ error: 'Email already registered' });
+
+        const password_hash = await bcrypt.hash(password, 12);
+        const [result] = await db.query(
+            'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+            [name, email, password_hash]
+        );
+
+        const token = jwt.sign({ id: result.insertId, name, email, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
+        res.status(201).json({ token, user: { id: result.insertId, name, email, role: 'user' } });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// POST /api/auth/login
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+
+    try {
+        const [rows] = await db.query('SELECT * FROM users WHERE email = ?', [email]);
+        if (rows.length === 0) return res.status(401).json({ error: 'Invalid credentials' });
+
+        const user = rows[0];
+        if (user.is_banned) return res.status(403).json({ error: 'Account is banned' });
+
+        const valid = await bcrypt.compare(password, user.password_hash);
+        if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
+
+        const token = jwt.sign(
+            { id: user.id, name: user.name, email: user.email, role: user.role },
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+        res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// GET /api/auth/me — verify token and return user
+router.get('/me', authRequired, async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT id, name, email, role, created_at FROM users WHERE id = ?', [req.user.id]);
+        if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email required' });
+
+    try {
+        const [rows] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
+        // Always respond 200 to prevent email enumeration
+        if (rows.length === 0) return res.json({ message: 'If that email exists, a reset link was sent.' });
+
+        const token = crypto.randomBytes(32).toString('hex');
+        const expires = new Date(Date.now() + 3600 * 1000); // 1 hour
+
+        await db.query(
+            'UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE email = ?',
+            [token, expires, email]
+        );
+
+        // TODO: Send email with reset link: `${process.env.CLIENT_URL}/reset-password?token=${token}`
+        console.log(`Password reset token for ${email}: ${token}`);
+
+        res.json({ message: 'If that email exists, a reset link was sent.' });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req, res) => {
+    const { token, password } = req.body;
+    if (!token || !password) return res.status(400).json({ error: 'Token and new password required' });
+
+    try {
+        const [rows] = await db.query(
+            'SELECT id FROM users WHERE reset_token = ? AND reset_token_expires > NOW()',
+            [token]
+        );
+        if (rows.length === 0) return res.status(400).json({ error: 'Invalid or expired reset token' });
+
+        const password_hash = await bcrypt.hash(password, 12);
+        await db.query(
+            'UPDATE users SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?',
+            [password_hash, rows[0].id]
+        );
+
+        res.json({ message: 'Password reset successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+module.exports = router;
