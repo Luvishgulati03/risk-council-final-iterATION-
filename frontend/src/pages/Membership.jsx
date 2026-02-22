@@ -181,9 +181,8 @@ const Membership = () => {
                                     { label: 'Public Resources & News', allowed: true },
                                     { label: 'Events & Webinar Access', allowed: true },
                                     { label: 'Member-Only Audit Templates', allowed: isMember },
-                                    { label: 'Upload Resources', allowed: isAdmin },
-                                    { label: 'Edit & Delete Resources', allowed: isAdmin },
-                                    { label: 'User Management', allowed: isAdmin },
+                                    { label: 'Community Q&A Full Access', allowed: true },
+                                    { label: 'Event Priority Registration', allowed: isMember },
                                 ].map(({ label, allowed }) => (
                                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
                                         {allowed
