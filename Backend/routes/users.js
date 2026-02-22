@@ -30,7 +30,7 @@ router.get('/me/answers', authRequired, async (req, res) => {
 router.get('/', authRequired, adminOnly, async (req, res) => {
     try {
         const [rows] = await db.query(
-            'SELECT id, name, email, role, is_banned, created_at FROM users ORDER BY created_at DESC'
+            'SELECT id, name, email, role, approval_status, is_banned, created_at FROM users ORDER BY created_at DESC'
         );
         res.json(rows);
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
@@ -46,6 +46,18 @@ router.patch('/:id/role', authRequired, adminOnly, async (req, res) => {
     try {
         await db.query('UPDATE users SET role = ? WHERE id = ?', [role, req.params.id]);
         res.json({ message: `Role updated to ${role}` });
+    } catch (err) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// PATCH /api/users/:id/approval_status — admin only
+router.patch('/:id/approval_status', authRequired, adminOnly, async (req, res) => {
+    const { status } = req.body;
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid approval status' });
+    }
+    try {
+        await db.query('UPDATE users SET approval_status = ? WHERE id = ?', [status, req.params.id]);
+        res.json({ message: `Approval status updated to ${status}` });
     } catch (err) { res.status(500).json({ error: 'Server error' }); }
 });
 

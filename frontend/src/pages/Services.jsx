@@ -10,7 +10,7 @@ const Services = () => {
                 <div className="container">
                     <h1 style={{ color: 'white' }}>Professional Services</h1>
                     <p style={{ fontSize: '1.25rem', color: '#CBD5E0', maxWidth: '700px' }}>
-                        Leverage the expertise of the Council to accelerate your AI governance maturity. We offer tailored advisory and independent review services.
+                        Leverage our expertise to accelerate your AI governance maturity. We offer specialized insight reports, product reviews, and control audits.
                     </p>
                 </div>
             </Section>

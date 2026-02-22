@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import UserManagement from './pages/UserManagement';
+import AdminDashboard from './pages/AdminDashboard';
 // Pages
 import Home from './pages/Home';
 import About from './pages/About';
@@ -14,6 +15,8 @@ import Certifications from './pages/Certifications';
 import Membership from './pages/Membership';
 import Contact from './pages/Contact';
 import RiskDomain from './pages/RiskDomain';
+import CommunityQnA from './pages/CommunityQnA';
+import Events from './pages/Events';
 
 function App() {
   const { pathname } = useLocation();
@@ -39,6 +42,9 @@ function App() {
           <Route path="/membership" element={<Membership />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/admin/users" element={<UserManagement />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/community" element={<CommunityQnA />} />
+          <Route path="/events" element={<Events />} />
         </Routes>
       </main>
       <Footer />

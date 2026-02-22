@@ -47,9 +47,13 @@ const Footer = () => {
                     <div>
                         <h5 style={{ color: 'white', marginBottom: '1.25rem', fontFamily: 'var(--font-sans)' }}>Contact</h5>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.9rem', color: '#CBD5E0' }}>
-                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                                <MapPin size={16} />
-                                <span>100 Global Risk Plaza, NY, USA</span>
+                            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                                <MapPin size={16} style={{ marginTop: '4px', flexShrink: 0 }} />
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <span><strong>USA:</strong> Kmicro Company</span>
+                                    <span><strong>India:</strong> 902a Arcadia Mall, Gurugram Sector 49</span>
+                                    <span><strong>Dubai:</strong> Dubai Internet City, Dubai, UAE</span>
+                                </div>
                             </div>
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                 <Phone size={16} />

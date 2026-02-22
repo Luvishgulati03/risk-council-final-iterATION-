@@ -20,8 +20,8 @@ router.post('/register', async (req, res) => {
             [name, email, password_hash]
         );
 
-        const token = jwt.sign({ id: result.insertId, name, email, role: 'user' }, JWT_SECRET, { expiresIn: '7d' });
-        res.status(201).json({ token, user: { id: result.insertId, name, email, role: 'user' } });
+        const token = jwt.sign({ id: result.insertId, name, email, role: 'user', approval_status: 'pending' }, JWT_SECRET, { expiresIn: '7d' });
+        res.status(201).json({ token, user: { id: result.insertId, name, email, role: 'user', approval_status: 'pending' } });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
@@ -44,11 +44,11 @@ router.post('/login', async (req, res) => {
         if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
         const token = jwt.sign(
-            { id: user.id, name: user.name, email: user.email, role: user.role },
+            { id: user.id, name: user.name, email: user.email, role: user.role, approval_status: user.approval_status },
             JWT_SECRET,
             { expiresIn: '7d' }
         );
-        res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+        res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role, approval_status: user.approval_status } });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
@@ -58,7 +58,7 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me — verify token and return user
 router.get('/me', authRequired, async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT id, name, email, role, created_at FROM users WHERE id = ?', [req.user.id]);
+        const [rows] = await db.query('SELECT id, name, email, role, approval_status, created_at FROM users WHERE id = ?', [req.user.id]);
         if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
         res.json(rows[0]);
     } catch (err) {

@@ -59,8 +59,21 @@ const Contact = () => {
                                 <div style={{ display: 'flex', gap: '1rem' }}>
                                     <MapPin />
                                     <div>
-                                        <h5 style={{ color: 'white', marginBottom: '0.5rem' }}>Headquarters</h5>
-                                        <p style={{ color: '#E2E8F0' }}>100 Global Risk Plaza<br />New York, NY 10001<br />United States</p>
+                                        <h5 style={{ color: 'white', marginBottom: '1rem' }}>Global Offices</h5>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                            <div>
+                                                <strong style={{ color: 'white' }}>USA:</strong>
+                                                <p style={{ color: '#E2E8F0', marginTop: '0.25rem' }}>Kmicro Company</p>
+                                            </div>
+                                            <div>
+                                                <strong style={{ color: 'white' }}>India:</strong>
+                                                <p style={{ color: '#E2E8F0', marginTop: '0.25rem' }}>902a Arcadia Mall, Gurugram Sector 49</p>
+                                            </div>
+                                            <div>
+                                                <strong style={{ color: 'white' }}>Dubai:</strong>
+                                                <p style={{ color: '#E2E8F0', marginTop: '0.25rem' }}>Dubai Internet City, Dubai, UAE</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '1rem' }}>

@@ -1,19 +1,21 @@
 export const navItems = [
     { label: 'Home', path: '/' },
     { label: 'About Us', path: '/about' },
+    { label: 'Events', path: '/events' },
+    { label: 'Services', path: '/services' },
     { label: 'AI Risk Framework', path: '/framework' },
     { label: 'AI Risk Assessment & Council', path: '/assessment' },
-    { label: 'Services', path: '/services' },
     { label: 'Research & Resources', path: '/resources' },
     { label: 'Certifications', path: '/certifications' },
+    { label: 'Community Q&A', path: '/community' },
     { label: 'Contact Us', path: '/contact' },
 ];
 
 export const heroContent = {
-    title: "Setting the Global Standard for AI Risk Governance",
-    subtitle: "The AI Risk Council provides independent oversight, frameworks, and assessment standards to ensure responsible, compliant, and ethical Artificial Intelligence adoption across enterprises.",
-    ctaPrimary: "Explore AI Risk Framework",
-    ctaSecondary: "Join the Council"
+    title: "AI Security Insight Reports & Assessments",
+    subtitle: "We provide comprehensive insight reports and security assessments to help your organization adopt Artificial Intelligence responsibly, utilizing industry-leading frameworks.",
+    ctaPrimary: "Explore Our Services",
+    ctaSecondary: "Contact Us"
 };
 
 export const riskDomains = [
@@ -62,12 +64,8 @@ export const riskDomains = [
 ];
 
 export const services = [
-    { title: "AI Risk Advisory", description: "Strategic guidance for Boards and C-Suite on AI governance structures and policy formulation." },
-    { title: "Risk & AI (RAI) Certification", description: "Comprehensive certification program covering AI tools, machine learning risks, and ethical AI principles." },
-    { title: "Governance Framework Design", description: "Tailored implementation of the ARC Risk Framework to fit organizational maturity and scale." },
-    { title: "Independent AI Risk Reviews", description: "Third-party audit and validation of high-impact AI models against global standards." },
-    { title: "AI Control Audits", description: "Assessment of data governance, model testing, and bias mitigation controls." },
-    { title: "Executive Workshops", description: "Targeted training for leadership teams on understanding and mitigating AI-specific risks." }
+    { title: "Product Review", description: "Comprehensive security review of AI products and infrastructure leveraging top solutions like Microsoft Purview." },
+    { title: "Control Audits", description: "Rigorous auditing of AI controls and governance frameworks utilizing enterprise-grade tools like Microsoft Purview." }
 ];
 
 export const pillars = [

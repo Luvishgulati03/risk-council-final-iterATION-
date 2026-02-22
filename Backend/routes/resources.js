@@ -33,15 +33,9 @@ const hasMemberAccess = (user) => user && (user.role === 'member' || user.role =
 // GET /api/resources
 router.get('/', authOptional, async (req, res) => {
     try {
-        let query = 'SELECT * FROM articles WHERE 1=1';
+        let query = 'SELECT * FROM resources WHERE 1=1';
         const params = [];
 
-        // Only member+ can see registered resources
-        if (!hasMemberAccess(req.user)) {
-            query += " AND access_level = 'public'";
-        }
-
-        if (req.query.category) { query += ' AND category_slug = ?'; params.push(req.query.category); }
         if (req.query.type) { query += ' AND type = ?'; params.push(req.query.type); }
 
         query += ' ORDER BY created_at DESC';
@@ -56,11 +50,11 @@ router.get('/', authOptional, async (req, res) => {
 // GET /api/resources/:id
 router.get('/:id', authOptional, async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM articles WHERE id = ?', [req.params.id]);
+        const [rows] = await db.query('SELECT * FROM resources WHERE id = ?', [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
         const resource = rows[0];
         // Block 'user' role and unauthenticated from member resources
-        if (resource.access_level === 'registered' && !hasMemberAccess(req.user)) {
+        if (resource.access === 'Members Only' && !hasMemberAccess(req.user)) {
             return res.status(403).json({ error: 'Member access required' });
         }
         res.json(resource);
@@ -72,12 +66,12 @@ router.get('/:id', authOptional, async (req, res) => {
 // POST /api/resources/:id/download — increment download count
 router.post('/:id/download', authOptional, async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT id, access_level FROM articles WHERE id = ?', [req.params.id]);
+        const [rows] = await db.query('SELECT id, access FROM resources WHERE id = ?', [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
-        if (rows[0].access_level === 'registered' && !hasMemberAccess(req.user)) {
+        if (rows[0].access === 'Members Only' && !hasMemberAccess(req.user)) {
             return res.status(403).json({ error: 'Member access required' });
         }
-        await db.query('UPDATE articles SET download_count = download_count + 1 WHERE id = ?', [req.params.id]);
+        await db.query('UPDATE resources SET download_count = COALESCE(download_count, 0) + 1 WHERE id = ?', [req.params.id]);
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
@@ -86,16 +80,27 @@ router.post('/:id/download', authOptional, async (req, res) => {
 
 // POST /api/resources — admin only
 router.post('/', authRequired, adminOnly, upload.single('file'), async (req, res) => {
-    const { title, summary, source_url, category_slug, type, access_level } = req.body;
-    if (!title || !summary) return res.status(400).json({ error: 'Title and summary required' });
+    const { title, summary, description, source_url, external_link, type, access_level, access, category_slug } = req.body;
+    if (!title) return res.status(400).json({ error: 'Title required' });
     const file_path = req.file ? `/uploads/${req.file.filename}` : null;
     try {
+        const desc = summary || description || null;
+        const link = source_url || external_link || null;
+        const acc = access_level || access || 'Public';
+
+        // Let's resolve category ID if slug is provided
+        let catId = null;
+        if (category_slug) {
+            const [cats] = await db.query('SELECT id FROM categories WHERE name = ?', [category_slug]);
+            if (cats.length > 0) catId = cats[0].id;
+        }
+
         const [result] = await db.query(
-            `INSERT INTO articles (title, summary, source_url, file_path, category_slug, type, access_level)
+            `INSERT INTO resources (title, description, external_link, file_path, type, access, category_id)
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [title, summary, source_url || null, file_path, category_slug || null, type || 'article', access_level || 'public']
+            [title, desc, link, file_path, type || 'Guide', acc, catId]
         );
-        const [rows] = await db.query('SELECT * FROM articles WHERE id = ?', [result.insertId]);
+        const [rows] = await db.query('SELECT * FROM resources WHERE id = ?', [result.insertId]);
         res.status(201).json(rows[0]);
     } catch (err) {
         console.error(err);
@@ -105,27 +110,38 @@ router.post('/', authRequired, adminOnly, upload.single('file'), async (req, res
 
 // PUT /api/resources/:id — admin only
 router.put('/:id', authRequired, adminOnly, upload.single('file'), async (req, res) => {
-    const { title, summary, source_url, category_slug, type, access_level } = req.body;
+    const { title, summary, description, source_url, external_link, type, access_level, access, category_slug } = req.body;
+    if (!title) return res.status(400).json({ error: 'Title required' });
+
     try {
-        const [existing] = await db.query('SELECT * FROM articles WHERE id = ?', [req.params.id]);
-        if (existing.length === 0) return res.status(404).json({ error: 'Not found' });
-        const file_path = req.file ? `/uploads/${req.file.filename}` : existing[0].file_path;
-        await db.query(
-            `UPDATE articles SET title=?, summary=?, source_url=?, file_path=?, category_slug=?, type=?, access_level=? WHERE id=?`,
-            [
-                title || existing[0].title,
-                summary || existing[0].summary,
-                source_url || existing[0].source_url,
-                file_path,
-                category_slug || existing[0].category_slug,
-                type || existing[0].type,
-                access_level || existing[0].access_level,
-                req.params.id
-            ]
-        );
-        const [rows] = await db.query('SELECT * FROM articles WHERE id = ?', [req.params.id]);
+        const desc = summary || description || null;
+        const link = source_url || external_link || null;
+        const acc = access_level || access || 'Public';
+
+        // Resolve Category String to ID
+        let catId = null;
+        if (category_slug) {
+            const [cats] = await db.query('SELECT id FROM categories WHERE name = ?', [category_slug]);
+            if (cats.length > 0) catId = cats[0].id;
+        }
+
+        if (req.file) {
+            const file_path = `/uploads/${req.file.filename}`;
+            await db.query(
+                `UPDATE resources SET title=?, description=?, external_link=?, file_path=?, type=?, access=?, category_id=? WHERE id=?`,
+                [title, desc, link, file_path, type || 'Guide', acc, catId, req.params.id]
+            );
+        } else {
+            await db.query(
+                `UPDATE resources SET title=?, description=?, external_link=?, type=?, access=?, category_id=? WHERE id=?`,
+                [title, desc, link, type || 'Guide', acc, catId, req.params.id]
+            );
+        }
+
+        const [rows] = await db.query('SELECT * FROM resources WHERE id = ?', [req.params.id]);
         res.json(rows[0]);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Server error' });
     }
 });
@@ -133,13 +149,13 @@ router.put('/:id', authRequired, adminOnly, upload.single('file'), async (req, r
 // DELETE /api/resources/:id — admin only
 router.delete('/:id', authRequired, adminOnly, async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT file_path FROM articles WHERE id = ?', [req.params.id]);
+        const [rows] = await db.query('SELECT file_path FROM resources WHERE id = ?', [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
         if (rows[0].file_path) {
             const fp = path.join(__dirname, '..', rows[0].file_path);
             if (fs.existsSync(fp)) fs.unlinkSync(fp);
         }
-        await db.query('DELETE FROM articles WHERE id = ?', [req.params.id]);
+        await db.query('DELETE FROM resources WHERE id = ?', [req.params.id]);
         res.json({ message: 'Deleted' });
     } catch (err) {
         res.status(500).json({ error: 'Server error' });

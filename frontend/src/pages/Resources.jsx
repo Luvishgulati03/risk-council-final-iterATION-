@@ -425,9 +425,11 @@ const TYPE_ICONS = {
     whitepaper: <BookOpen size={12} />,
     video: <Video size={12} />,
     tool: <Globe size={12} />,
+    news: <FileText size={12} />,
+    'homepage video': <Video size={12} />,
 };
 
-const TYPE_OPTIONS = ['article', 'whitepaper', 'video', 'tool'];
+const TYPE_OPTIONS = ['article', 'whitepaper', 'video', 'tool', 'news', 'homepage video'];
 const ACCESS_OPTIONS = ['public', 'registered'];
 
 const formatDate = (d) => {
@@ -570,6 +572,7 @@ const Resources = () => {
     const [filterAccess, setFilterAccess] = useState('all');
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [modal, setModal] = useState(null); // null | { mode: 'create' | 'edit', resource? }
+    const [expandedNews, setExpandedNews] = useState(null); // specific news item to read
     const [toast, setToast] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState(null);
 
@@ -598,7 +601,16 @@ const Resources = () => {
     useEffect(() => { fetchResources(); }, [filterType, token]);
 
     // Filter client-side by search & access
-    const filtered = resources.filter(r => {
+    const mainFiltered = resources.filter(r => r.type !== 'news').filter(r => {
+        const matchSearch = !search ||
+            r.title?.toLowerCase().includes(search.toLowerCase()) ||
+            r.summary?.toLowerCase().includes(search.toLowerCase());
+        const matchAccess = filterAccess === 'all' || r.access_level === filterAccess;
+        const matchType = filterType === 'all' || r.type === filterType;
+        return matchSearch && matchAccess && matchType;
+    });
+
+    const newsFiltered = resources.filter(r => r.type === 'news').filter(r => {
         const matchSearch = !search ||
             r.title?.toLowerCase().includes(search.toLowerCase()) ||
             r.summary?.toLowerCase().includes(search.toLowerCase());
@@ -738,7 +750,7 @@ const Resources = () => {
                             </div>
 
                             <div className="filter-stats">
-                                <p>{filtered.length} resource{filtered.length !== 1 ? 's' : ''}</p>
+                                <p>{mainFiltered.length} resource{mainFiltered.length !== 1 ? 's' : ''}</p>
                             </div>
                         </div>
                     )}
@@ -799,7 +811,7 @@ const Resources = () => {
                     )}
 
                     {/* Empty state */}
-                    {!loading && filtered.length === 0 && (
+                    {!loading && mainFiltered.length === 0 && newsFiltered.length === 0 && (
                         <div className="resources-empty">
                             <span>📭</span>
                             <p>{search ? `No results for "${search}"` : 'No resources found.'}</p>
@@ -807,10 +819,11 @@ const Resources = () => {
                         </div>
                     )}
 
+
                     {/* Resource cards */}
-                    {!loading && filtered.length > 0 && (
+                    {!loading && mainFiltered.length > 0 && (
                         <div className="resources-grid">
-                            {filtered.map(r => (
+                            {mainFiltered.map(r => (
                                 <div key={r.id} className="resource-card">
                                     <div className="resource-card__top">
                                         <span className="resource-card__type-badge">
@@ -882,48 +895,95 @@ const Resources = () => {
                 />
             )}
 
-            {/* Delete Confirm Dialog */}
-            {deleteConfirm && (
+            {/* Read More News Modal */}
+            {expandedNews && (
                 <div style={{
-                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
                     zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }}
-                    onClick={() => setDeleteConfirm(null)}
+                    onClick={() => setExpandedNews(null)}
                 >
                     <div style={{
                         background: 'white', borderRadius: 'var(--radius-md)',
-                        padding: '2rem', maxWidth: '380px', width: '90%',
-                        boxShadow: '0 20px 50px rgba(0,0,0,0.2)'
+                        padding: '2.5rem', maxWidth: '600px', width: '90%',
+                        boxShadow: '0 20px 50px rgba(0,0,0,0.3)', position: 'relative',
+                        maxHeight: '90vh', overflowY: 'auto'
                     }}
                         onClick={e => e.stopPropagation()}
                     >
-                        <h3 style={{ margin: '0 0 0.75rem', color: 'var(--text-main)', fontSize: '1.1rem' }}>Delete Resource?</h3>
-                        <p style={{ margin: '0 0 1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                            This action cannot be undone. The file and all associated data will be permanently removed.
-                        </p>
-                        <div style={{ display: 'flex', gap: '0.75rem' }}>
-                            <button onClick={() => setDeleteConfirm(null)} style={btnSecStyle}>Cancel</button>
-                            <button onClick={() => handleDelete(deleteConfirm)} style={{ ...btnPrimStyle, background: '#DC2626', flex: 1 }}>Delete</button>
+                        <button onClick={() => setExpandedNews(null)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                            <X size={24} />
+                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
+                            <span style={{ backgroundColor: '#EFF6FF', color: 'var(--primary)', padding: '4px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 'bold' }}>News</span>
+                            <span style={{ fontSize: '0.9rem', color: 'var(--text-light)' }}>{formatDate(expandedNews.created_at)}</span>
                         </div>
+                        <h2 style={{ fontSize: '1.75rem', marginBottom: '20px', color: 'var(--text-main)' }}>{expandedNews.title}</h2>
+                        <div style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>
+                            {expandedNews.description || expandedNews.summary}
+                        </div>
+                        {(expandedNews.external_link || expandedNews.file_path) && (
+                            <div style={{ marginTop: '30px', borderTop: '1px solid var(--border-light)', paddingTop: '20px' }}>
+                                <button
+                                    className="resource-card__download"
+                                    onClick={() => handleDownload(expandedNews)}
+                                    style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
+                                >
+                                    <Globe size={16} style={{ marginRight: '8px' }} /> View Full Source
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
-            )}
+            )
+            }
+
+            {/* Delete Confirm Dialog */}
+            {
+                deleteConfirm && (
+                    <div style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+                        zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}
+                        onClick={() => setDeleteConfirm(null)}
+                    >
+                        <div style={{
+                            background: 'white', borderRadius: 'var(--radius-md)',
+                            padding: '2rem', maxWidth: '380px', width: '90%',
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.2)'
+                        }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <h3 style={{ margin: '0 0 0.75rem', color: 'var(--text-main)', fontSize: '1.1rem' }}>Delete Resource?</h3>
+                            <p style={{ margin: '0 0 1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                                This action cannot be undone. The file and all associated data will be permanently removed.
+                            </p>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <button onClick={() => setDeleteConfirm(null)} style={btnSecStyle}>Cancel</button>
+                                <button onClick={() => handleDelete(deleteConfirm)} style={{ ...btnPrimStyle, background: '#DC2626', flex: 1 }}>Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
 
             {/* Toast */}
-            {toast && (
-                <div style={{
-                    position: 'fixed', bottom: '1.5rem', right: '1.5rem',
-                    background: toast.type === 'error' ? '#DC2626' : '#065F46',
-                    color: 'white', padding: '0.75rem 1.25rem',
-                    borderRadius: 'var(--radius-sm)', fontSize: '0.875rem', fontWeight: '600',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 600,
-                    display: 'flex', alignItems: 'center', gap: '0.5rem'
-                }}>
-                    {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
-                    {toast.msg}
-                </div>
-            )}
-        </div>
+            {
+                toast && (
+                    <div style={{
+                        position: 'fixed', bottom: '1.5rem', right: '1.5rem',
+                        background: toast.type === 'error' ? '#DC2626' : '#065F46',
+                        color: 'white', padding: '0.75rem 1.25rem',
+                        borderRadius: 'var(--radius-sm)', fontSize: '0.875rem', fontWeight: '600',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 600,
+                        display: 'flex', alignItems: 'center', gap: '0.5rem'
+                    }}>
+                        {toast.type === 'error' ? <AlertCircle size={16} /> : <CheckCircle size={16} />}
+                        {toast.msg}
+                    </div>
+                )
+            }
+        </div >
     );
 };
 

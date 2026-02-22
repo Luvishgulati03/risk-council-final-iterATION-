@@ -11,6 +11,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 //hello
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/events', require('./routes/events'));
+app.use('/api/team', require('./routes/team'));
 app.use('/api/resources', require('./routes/resources'));
 app.use('/api/questions', require('./routes/questions'));
 app.use('/api/answers', require('./routes/answers'));
