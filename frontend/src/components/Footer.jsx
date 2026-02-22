@@ -50,7 +50,7 @@ const Footer = () => {
                             <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                                 <MapPin size={16} style={{ marginTop: '4px', flexShrink: 0 }} />
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <span><strong>USA:</strong> Kmicro Company</span>
+                                    <span><strong>USA:</strong> Kmicro — 3525 Hyland Ave Ste 265, Costa Mesa, CA 92626</span>
                                     <span><strong>India:</strong> 902a Arcadia Mall, Gurugram Sector 49</span>
                                     <span><strong>Dubai:</strong> Dubai Internet City, Dubai, UAE</span>
                                 </div>

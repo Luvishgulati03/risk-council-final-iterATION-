@@ -63,7 +63,7 @@ const Contact = () => {
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                             <div>
                                                 <strong style={{ color: 'white' }}>USA:</strong>
-                                                <p style={{ color: '#E2E8F0', marginTop: '0.25rem' }}>Kmicro Company</p>
+                                                <p style={{ color: '#E2E8F0', marginTop: '0.25rem' }}>Kmicro — 3525 Hyland Ave Ste 265,<br />Costa Mesa, CA 92626, United States</p>
                                             </div>
                                             <div>
                                                 <strong style={{ color: 'white' }}>India:</strong>
