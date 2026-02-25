@@ -1,11 +1,11 @@
 export const navItems = [
     { label: 'Home', path: '/' },
-    { label: 'About Us', path: '/about' },
     { label: 'Events', path: '/events' },
     { label: 'Services', path: '/services' },
     { label: 'AI Risk Framework', path: '/framework' },
-    { label: 'AI Risk Assessment & Council', path: '/assessment' },
+    // { label: 'AI Risk Assessment & Council', path: '/assessment' },
     { label: 'Research & Resources', path: '/resources' },
+    { label: 'About Us', path: '/about' },
     { label: 'Certifications', path: '/certifications' },
     { label: 'Community Q&A', path: '/community' },
     { label: 'Contact Us', path: '/contact' },
@@ -64,8 +64,7 @@ export const riskDomains = [
 ];
 
 export const services = [
-    { title: "Product Review", description: "Comprehensive security review of AI products and infrastructure leveraging top solutions like Microsoft Purview." },
-    { title: "Control Audits", description: "Rigorous auditing of AI controls and governance frameworks utilizing enterprise-grade tools like Microsoft Purview." }
+    { title: "Product Review", description: "Independent security reviews of AI and cybersecurity products by expert council members, with star ratings and detailed assessments." }
 ];
 
 export const pillars = [

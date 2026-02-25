@@ -69,7 +69,11 @@ const Membership = () => {
     const [authMode, setAuthMode] = useState(location.state?.mode || 'login');
     const [showPw, setShowPw] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false);
-    const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '', organisation: '' });
+    const [form, setForm] = useState({
+        name: '', email: '', password: '', confirmPassword: '', organisation: '',
+        role: 'user', // user, university, company
+        gst: '', pan: '', incorporation_number: '', phone: ''
+    });
     const [fieldErrors, setFieldErrors] = useState({});
     const [globalError, setGlobalError] = useState('');
     const [success, setSuccess] = useState('');
@@ -101,6 +105,12 @@ const Membership = () => {
         if (authMode === 'register') {
             if (!form.name.trim() || form.name.trim().length < 2) errors.name = 'Full name must be at least 2 characters.';
             if (!form.organisation.trim()) errors.organisation = 'Organisation / affiliation is required.';
+            if (form.role === 'company') {
+                if (!form.gst.trim()) errors.gst = 'GST Number is required.';
+                if (!form.pan.trim()) errors.pan = 'PAN is required.';
+                if (!form.incorporation_number.trim()) errors.incorporation_number = 'Incorporation Number is required.';
+                if (!form.phone.trim()) errors.phone = 'Phone number is required.';
+            }
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.email = 'Please enter a valid email address.';
         if (!form.password) {
@@ -126,7 +136,10 @@ const Membership = () => {
                 await login(form.email, form.password);
                 navigate('/');
             } else {
-                await register(form.name, form.email, form.password);
+                await register(
+                    form.name, form.email, form.password, form.role,
+                    form.organisation, form.gst, form.pan, form.incorporation_number, form.phone
+                );
                 setSuccess('Account created successfully! Welcome to the AI Risk Council.');
                 setTimeout(() => navigate('/'), 1800);
             }
@@ -311,16 +324,63 @@ const Membership = () => {
                                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }} noValidate>
                                     {authMode === 'register' && (
                                         <>
+                                            <div style={{ marginBottom: '0.8rem' }}>
+                                                <label style={{ fontWeight: '600', fontSize: '0.875rem', color: '#374151', display: 'block', marginBottom: '0.4rem' }}>
+                                                    Account Type
+                                                </label>
+                                                <select
+                                                    name="role"
+                                                    value={form.role}
+                                                    onChange={handleChange}
+                                                    style={{
+                                                        width: '100%', padding: '0.75rem', border: '1.5px solid #CBD5E1',
+                                                        borderRadius: '8px', fontSize: '0.92rem', boxSizing: 'border-box',
+                                                        fontFamily: 'var(--font-sans)', outline: 'none', background: 'white',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                >
+                                                    <option value="user">Standard User / Individual</option>
+                                                    <option value="university">University / Educational Institution</option>
+                                                    <option value="company">Corporate / Product Company</option>
+                                                </select>
+                                            </div>
+
                                             <InputField
                                                 label="Full Name" name="name" value={form.name}
                                                 onChange={handleChange} placeholder="Jane Smith"
                                                 error={fieldErrors.name}
                                             />
                                             <InputField
-                                                label="Organisation / Affiliation" name="organisation" value={form.organisation}
-                                                onChange={handleChange} placeholder="Acme Corp / Independent"
+                                                label={form.role === 'university' ? 'University Name' : form.role === 'company' ? 'Company Name' : 'Organisation / Affiliation'}
+                                                name="organisation" value={form.organisation}
+                                                onChange={handleChange} placeholder={form.role === 'company' ? 'Acme Corp' : 'Organisation Name'}
                                                 error={fieldErrors.organisation}
                                             />
+
+                                            {form.role === 'company' && (
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                                    <InputField
+                                                        label="GST Number" name="gst" value={form.gst}
+                                                        onChange={handleChange} placeholder="22AAAAA0000A1Z5"
+                                                        error={fieldErrors.gst}
+                                                    />
+                                                    <InputField
+                                                        label="PAN" name="pan" value={form.pan}
+                                                        onChange={handleChange} placeholder="AAAAA0000A"
+                                                        error={fieldErrors.pan}
+                                                    />
+                                                    <InputField
+                                                        label="Incorporation No." name="incorporation_number" value={form.incorporation_number}
+                                                        onChange={handleChange} placeholder="U12345SK2000PTC123456"
+                                                        error={fieldErrors.incorporation_number}
+                                                    />
+                                                    <InputField
+                                                        label="Phone Number" name="phone" value={form.phone} type="tel"
+                                                        onChange={handleChange} placeholder="+91 98765 43210"
+                                                        error={fieldErrors.phone}
+                                                    />
+                                                </div>
+                                            )}
                                         </>
                                     )}
 

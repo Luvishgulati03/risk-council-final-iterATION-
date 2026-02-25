@@ -26,7 +26,7 @@ const Footer = () => {
                         <h5 style={{ color: 'white', marginBottom: '1.25rem', fontFamily: 'var(--font-sans)' }}>Governance</h5>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             <Link to="/framework" style={{ color: '#CBD5E0', fontSize: '0.9rem' }}>Risk Framework</Link>
-                            <Link to="/assessment" style={{ color: '#CBD5E0', fontSize: '0.9rem' }}>Assessment & Certification</Link>
+                            {/* <Link to="/assessment" style={{ color: '#CBD5E0', fontSize: '0.9rem' }}>Assessment & Certification</Link> */}
                             <Link to="/standards" style={{ color: '#CBD5E0', fontSize: '0.9rem' }}>Global Standards</Link>
                             <Link to="/policy" style={{ color: '#CBD5E0', fontSize: '0.9rem' }}>Policy & Regulation</Link>
                         </div>

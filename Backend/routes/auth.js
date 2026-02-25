@@ -7,21 +7,27 @@ const { JWT_SECRET, authRequired } = require('../middleware/auth');
 
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) return res.status(400).json({ error: 'All fields required' });
+    const { name, email, password, role, organization_name, gst, pan, incorporation_number, phone } = req.body;
+    if (!name || !email || !password) return res.status(400).json({ error: 'Name, email, and password required' });
 
     try {
         const [existing] = await db.query('SELECT id FROM users WHERE email = ?', [email]);
         if (existing.length > 0) return res.status(409).json({ error: 'Email already registered' });
 
         const password_hash = await bcrypt.hash(password, 12);
+
+        // Ensure role is valid
+        const assignedRole = ['user', 'university', 'company'].includes(role) ? role : 'user';
+
         const [result] = await db.query(
-            'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
-            [name, email, password_hash]
+            `INSERT INTO users (name, email, password_hash, role, organization_name, gst, pan, incorporation_number, phone)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [name, email, password_hash, assignedRole, organization_name || null, gst || null, pan || null, incorporation_number || null, phone || null]
         );
 
-        const token = jwt.sign({ id: result.insertId, name, email, role: 'user', approval_status: 'pending' }, JWT_SECRET, { expiresIn: '7d' });
-        res.status(201).json({ token, user: { id: result.insertId, name, email, role: 'user', approval_status: 'pending' } });
+        const newUser = { id: result.insertId, name, email, role: assignedRole, approval_status: 'pending' };
+        const token = jwt.sign(newUser, JWT_SECRET, { expiresIn: '7d' });
+        res.status(201).json({ token, user: newUser });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
@@ -58,7 +64,7 @@ router.post('/login', async (req, res) => {
 // GET /api/auth/me — verify token and return user
 router.get('/me', authRequired, async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT id, name, email, role, approval_status, created_at FROM users WHERE id = ?', [req.user.id]);
+        const [rows] = await db.query('SELECT id, name, email, role, approval_status, organization_name, created_at FROM users WHERE id = ?', [req.user.id]);
         if (rows.length === 0) return res.status(404).json({ error: 'User not found' });
         res.json(rows[0]);
     } catch (err) {

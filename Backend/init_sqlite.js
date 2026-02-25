@@ -25,15 +25,20 @@ async function setup() {
 
     console.log('Creating tables...');
 
-    // Users Table (Added approval_status)
+    // Users Table
     await db.exec(`
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
-        role TEXT DEFAULT 'user' CHECK(role IN ('user', 'member', 'admin')),
+        role TEXT DEFAULT 'user' CHECK(role IN ('user', 'member', 'admin', 'executive', 'university', 'company')),
         approval_status TEXT DEFAULT 'pending' CHECK(approval_status IN ('pending', 'approved', 'rejected')),
+        organization_name TEXT,
+        gst TEXT,
+        pan TEXT,
+        incorporation_number TEXT,
+        phone TEXT,
         is_banned INTEGER DEFAULT 0,
         reset_token TEXT,
         reset_token_expires DATETIME,
@@ -57,10 +62,11 @@ async function setup() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         description TEXT,
-        type TEXT NOT NULL CHECK(type IN ('whitepaper', 'guide', 'tool', 'article', 'news', 'homepage video')),
+        type TEXT NOT NULL CHECK(type IN ('whitepaper', 'guide', 'tool', 'article', 'news', 'homepage video', 'lab result', 'product')),
         external_link TEXT,
         file_path TEXT,
         access TEXT DEFAULT 'Public',
+        status TEXT DEFAULT 'approved' CHECK(status IN ('pending', 'approved', 'rejected')),
         download_count INTEGER DEFAULT 0,
         category_id INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -77,6 +83,7 @@ async function setup() {
         location TEXT NOT NULL,
         link TEXT,
         type TEXT DEFAULT 'upcoming' CHECK(type IN ('upcoming', 'past')),
+        category TEXT DEFAULT 'webinar',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -147,6 +154,24 @@ async function setup() {
       hashedUserPassword
     );
 
+    // Dummy Executive
+    await db.run(
+      `INSERT INTO users (id, name, email, password_hash, role, approval_status) VALUES (4, 'Exec Officer', 'exec@example.com', ?, 'executive', 'approved')`,
+      hashedUserPassword
+    );
+
+    // Dummy University
+    await db.run(
+      `INSERT INTO users (id, name, email, password_hash, role, approval_status) VALUES (5, 'Tech University', 'uni@example.com', ?, 'university', 'approved')`,
+      hashedUserPassword
+    );
+
+    // Dummy Company
+    await db.run(
+      `INSERT INTO users (id, name, email, password_hash, role, approval_status, organization_name, gst, pan) VALUES (6, 'Tech Corp', 'corp@example.com', ?, 'company', 'approved', 'Tech Corp Inc', '22AAAAA0000A1Z5', 'AAAAA0000A')`,
+      hashedUserPassword
+    );
+
     // 2. Seed Categories
     await db.run(`INSERT INTO categories (id, name, description) VALUES (1, 'AI Governance', 'Frameworks and best practices')`);
     await db.run(`INSERT INTO categories (id, name, description) VALUES (2, 'Cybersecurity', 'Protecting AI systems')`);
@@ -157,10 +182,10 @@ async function setup() {
     await db.run(`INSERT INTO resources (title, description, type, category_id) VALUES ('Vulnerability Scanner', 'Tool to scan LLM endpoints.', 'tool', 2)`);
 
     // 4. Seed Events
-    await db.run(`INSERT INTO events (title, date, location, link, type) VALUES ('AI Privacy Roadshow 2026', 'Saturday 28th February, 2026', 'Gandhinagar', 'https://example.com/register/1', 'upcoming')`);
-    await db.run(`INSERT INTO events (title, date, location, link, type) VALUES ('Certified Risk Officer Course (Batch 4)', '28th Feb - 1st March, 2026', 'Virtual', 'https://example.com/register/2', 'upcoming')`);
-    await db.run(`INSERT INTO events (title, date, location, link, type) VALUES ('Security & Trust Summit 2026', 'Friday, 20th February, 2026', 'T-Hub, Hyderabad', 'https://example.com/register/3', 'upcoming')`);
-    await db.run(`INSERT INTO events (title, date, location, link, type) VALUES ('Annual AI Safety Conference 2025', 'December 10th, 2025', 'Delhi', '#', 'past')`);
+    await db.run(`INSERT INTO events (title, date, location, link, type, category) VALUES ('AI Privacy Roadshow 2026', 'Saturday 28th February, 2026', 'Gandhinagar', 'https://example.com/register/1', 'upcoming', 'seminar')`);
+    await db.run(`INSERT INTO events (title, date, location, link, type, category) VALUES ('Certified Risk Officer Course (Batch 4)', '28th Feb - 1st March, 2026', 'Virtual', 'https://example.com/register/2', 'upcoming', 'webinar')`);
+    await db.run(`INSERT INTO events (title, date, location, link, type, category) VALUES ('Security & Trust Summit 2026', 'Friday, 20th February, 2026', 'T-Hub, Hyderabad', 'https://example.com/register/3', 'upcoming', 'conference')`);
+    await db.run(`INSERT INTO events (title, date, location, link, type, category) VALUES ('Annual AI Safety Conference 2025', 'December 10th, 2025', 'Delhi', '#', 'past', 'conference')`);
 
     // 5. Seed Team Members
     await db.run(`INSERT INTO team_members (name, role, linkedin_url) VALUES ('Akarsh Singh A.', 'Chief Policy Officer', 'https://linkedin.com')`);

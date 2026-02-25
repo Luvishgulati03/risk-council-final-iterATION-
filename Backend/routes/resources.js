@@ -33,7 +33,7 @@ const hasMemberAccess = (user) => user && (user.role === 'member' || user.role =
 // GET /api/resources
 router.get('/', authOptional, async (req, res) => {
     try {
-        let query = 'SELECT * FROM resources WHERE 1=1';
+        let query = 'SELECT * FROM resources WHERE status = "approved"';
         const params = [];
 
         if (req.query.type) { query += ' AND type = ?'; params.push(req.query.type); }
@@ -47,12 +47,29 @@ router.get('/', authOptional, async (req, res) => {
     }
 });
 
+// GET /api/resources/pending — admin only
+router.get('/pending', authRequired, adminOnly, async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM resources WHERE status = "pending" ORDER BY created_at DESC');
+        res.json(rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
 // GET /api/resources/:id
 router.get('/:id', authOptional, async (req, res) => {
     try {
         const [rows] = await db.query('SELECT * FROM resources WHERE id = ?', [req.params.id]);
         if (rows.length === 0) return res.status(404).json({ error: 'Not found' });
         const resource = rows[0];
+
+        // Hide pending from unprivileged requests
+        if (resource.status !== 'approved' && (!req.user || (req.user.role !== 'admin' && req.user.role !== 'executive'))) {
+            return res.status(403).json({ error: 'Resource not approved yet' });
+        }
+
         // Block 'user' role and unauthenticated from member resources
         if (resource.access === 'Members Only' && !hasMemberAccess(req.user)) {
             return res.status(403).json({ error: 'Member access required' });
@@ -78,17 +95,35 @@ router.post('/:id/download', authOptional, async (req, res) => {
     }
 });
 
-// POST /api/resources — admin only
-router.post('/', authRequired, adminOnly, upload.single('file'), async (req, res) => {
+// POST /api/resources — allowed for admin, exec, university, company
+router.post('/', authRequired, upload.single('file'), async (req, res) => {
+    const userRole = req.user.role;
+    if (!['admin', 'executive', 'university', 'company'].includes(userRole)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+    }
+
     const { title, summary, description, source_url, external_link, type, access_level, access, category_slug } = req.body;
     if (!title) return res.status(400).json({ error: 'Title required' });
+
+    let resolvedType = type || 'Guide';
+    let status = 'approved';
+
+    if (userRole === 'university') {
+        resolvedType = 'whitepaper';
+        status = 'pending';
+    } else if (userRole === 'company') {
+        resolvedType = 'product';
+        status = 'pending';
+    } else if (userRole === 'admin' || userRole === 'executive') {
+        status = 'approved';
+    }
+
     const file_path = req.file ? `/uploads/${req.file.filename}` : null;
     try {
         const desc = summary || description || null;
         const link = source_url || external_link || null;
         const acc = access_level || access || 'Public';
 
-        // Let's resolve category ID if slug is provided
         let catId = null;
         if (category_slug) {
             const [cats] = await db.query('SELECT id FROM categories WHERE name = ?', [category_slug]);
@@ -96,9 +131,9 @@ router.post('/', authRequired, adminOnly, upload.single('file'), async (req, res
         }
 
         const [result] = await db.query(
-            `INSERT INTO resources (title, description, external_link, file_path, type, access, category_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [title, desc, link, file_path, type || 'Guide', acc, catId]
+            `INSERT INTO resources (title, description, external_link, file_path, type, access, category_id, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [title, desc, link, file_path, resolvedType, acc, catId, status]
         );
         const [rows] = await db.query('SELECT * FROM resources WHERE id = ?', [result.insertId]);
         res.status(201).json(rows[0]);
@@ -157,6 +192,26 @@ router.delete('/:id', authRequired, adminOnly, async (req, res) => {
         }
         await db.query('DELETE FROM resources WHERE id = ?', [req.params.id]);
         res.json({ message: 'Deleted' });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// PATCH /api/resources/:id/approve — admin only
+router.patch('/:id/approve', authRequired, adminOnly, async (req, res) => {
+    try {
+        await db.query('UPDATE resources SET status = "approved" WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Resource approved successfully' });
+    } catch (err) {
+        res.status(500).json({ error: 'Server error' });
+    }
+});
+
+// PATCH /api/resources/:id/reject — admin only
+router.patch('/:id/reject', authRequired, adminOnly, async (req, res) => {
+    try {
+        await db.query('UPDATE resources SET status = "rejected" WHERE id = ?', [req.params.id]);
+        res.json({ message: 'Resource rejected' });
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }

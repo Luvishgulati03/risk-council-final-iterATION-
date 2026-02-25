@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Clock, Users, ArrowRight, Mic, Monitor, BookOpen, Radio } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, ArrowRight, Mic, Monitor, BookOpen, Radio, Video } from 'lucide-react';
+
+const API = 'http://localhost:5000/api';
 
 // ─── Type meta ───────────────────────────────────────────────────────────────
 const TYPE_META = {
@@ -8,32 +10,32 @@ const TYPE_META = {
     Seminar: { color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0', icon: <BookOpen size={14} />, image: '/event_seminar.png' },
     Workshop: { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', icon: <Mic size={14} />, image: '/event_workshop.png' },
     Podcast: { color: '#7C3AED', bg: '#FAF5FF', border: '#E9D5FF', icon: <Radio size={14} />, image: '/event_podcast.png' },
+    Conference: { color: '#B91C1C', bg: '#FEF2F2', border: '#FECACA', icon: <Users size={14} />, image: '/event_seminar.png' },
 };
 
-const ALL_TYPES = ['All', ...Object.keys(TYPE_META)];
+const ALL_CATEGORIES = ['All', 'Webinar', 'Seminar', 'Workshop', 'Podcast', 'Conference'];
 
 // ─── Event data ──────────────────────────────────────────────────────────────
-// All dates relative to current date (Feb 23, 2026)
-const EVENTS = [
-    // ── Upcoming Events ───────────────────────────────────────────────────────
+const STATIC_EVENTS = [
     {
-        id: 1,
+        id: 'static-1',
         title: 'EU AI Act Compliance: What You Need to Know in 2026',
-        type: 'Webinar',
+        category: 'Webinar',
+        type: 'upcoming',
         date: new Date('2026-03-06'),
         time: '2:00 PM – 3:30 PM CET',
-        location: 'Online (Zoom)',
+        location: 'Online (Teams)',
         attendees: '900+',
         description: 'A deep-dive webinar covering the EU AI Act\'s obligations for high-risk AI system providers. We walk through classification criteria, mandatory documentation, GPAI model rules, and enforcement timelines with a live Q&A.',
         tags: ['EU AI Act', 'Compliance', 'Regulatory'],
         featured: true,
         registrationUrl: '#',
-        past: false,
     },
     {
-        id: 2,
+        id: 'static-2',
         title: 'AI Model Risk Management: From Assessment to Audit',
-        type: 'Seminar',
+        category: 'Seminar',
+        type: 'upcoming',
         date: new Date('2026-03-18'),
         time: '10:00 AM – 12:00 PM EST',
         location: 'Online (MS Teams) + In-Person, New York',
@@ -42,12 +44,12 @@ const EVENTS = [
         tags: ['Model Risk', 'MRM', 'Audit'],
         featured: true,
         registrationUrl: '#',
-        past: false,
     },
     {
-        id: 3,
+        id: 'static-3',
         title: 'Hands-On AI Red Teaming Workshop',
-        type: 'Workshop',
+        category: 'Workshop',
+        type: 'upcoming',
         date: new Date('2026-04-10'),
         time: '9:00 AM – 5:00 PM IST',
         location: 'Gurugram, India (Hybrid)',
@@ -56,12 +58,12 @@ const EVENTS = [
         tags: ['Red Teaming', 'LLM Security', 'Practical'],
         featured: false,
         registrationUrl: '#',
-        past: false,
     },
     {
-        id: 4,
+        id: 'static-4',
         title: 'Episode 22: AI Procurement Risk with Sarah Mitchell (Microsoft)',
-        type: 'Podcast',
+        category: 'Podcast',
+        type: 'upcoming',
         date: new Date('2026-04-02'),
         time: 'Available on all platforms',
         location: 'Spotify / Apple Podcasts / YouTube',
@@ -70,26 +72,26 @@ const EVENTS = [
         tags: ['Procurement', 'Enterprise AI', 'Podcast'],
         featured: false,
         registrationUrl: '#',
-        past: false,
     },
     {
-        id: 5,
+        id: 'static-5',
         title: 'NIST AI RMF for Financial Services',
-        type: 'Webinar',
+        category: 'Webinar',
+        type: 'upcoming',
         date: new Date('2026-05-14'),
         time: '1:00 PM – 2:30 PM EST',
-        location: 'Online (Zoom)',
+        location: 'Online (Teams)',
         attendees: '1,100+',
         description: 'Practical implementation of the NIST AI Risk Management Framework tailored for banks, insurers, and asset managers. Covers govern, map, measure, and manage functions with real compliance case studies and a regulatory update from OCC/Fed perspectives.',
         tags: ['NIST AI RMF', 'Finance', 'Regulatory'],
         featured: false,
         registrationUrl: '#',
-        past: false,
     },
     {
-        id: 6,
+        id: 'static-6',
         title: 'Responsible AI for HR: Bias in Hiring Algorithms',
-        type: 'Seminar',
+        category: 'Seminar',
+        type: 'upcoming',
         date: new Date('2026-05-29'),
         time: '11:00 AM – 1:00 PM BST',
         location: 'London, UK + Online',
@@ -98,30 +100,27 @@ const EVENTS = [
         tags: ['Bias', 'HR Tech', 'Fairness'],
         featured: false,
         registrationUrl: '#',
-        past: false,
     },
-
-    // ── Past Events ──────────────────────────────────────────────────────────
     {
-        id: 7,
+        id: 'static-7',
         title: 'ISO/IEC 42001 Explained: Building an AI Management System',
-        type: 'Webinar',
+        category: 'Webinar',
+        type: 'past',
         date: new Date('2026-01-15'),
         time: '2:00 PM – 3:30 PM CET',
-        location: 'Online (Zoom)',
+        location: 'Online (Teams)',
         attendees: '1,400+',
         description: 'A comprehensive overview of ISO/IEC 42001 — the world\'s first AI management system standard. Covered structure, clause-by-clause requirements, gap assessment methodology, and certification pathway. Over 1,400 risk professionals attended.',
         summary: 'Attendees received a detailed clause-by-clause breakdown and a downloadable gap-assessment template. Recording is available to Council members. 94% of participants rated the session "Excellent" or "Very Good".',
         tags: ['ISO 42001', 'Certification', 'AI Governance'],
         featured: false,
-        registrationUrl: '#',
-        past: true,
         recordingUrl: '#',
     },
     {
-        id: 8,
+        id: 'static-8',
         title: 'AI Governance Workshop: Drafting Your Internal AI Policy',
-        type: 'Workshop',
+        category: 'Workshop',
+        type: 'past',
         date: new Date('2026-01-28'),
         time: '9:30 AM – 4:30 PM GMT',
         location: 'London, UK',
@@ -130,14 +129,13 @@ const EVENTS = [
         summary: 'Participants left with a customised draft AI policy and model inventory template. Three follow-up sessions were requested by participating organisations. The workshop was rated 4.9/5 by attendees.',
         tags: ['AI Policy', 'Internal Governance', 'Practical'],
         featured: false,
-        registrationUrl: '#',
-        past: true,
         recordingUrl: null,
     },
     {
-        id: 9,
+        id: 'static-9',
         title: 'Episode 19: The Rise of Agentic AI and Enterprise Risk',
-        type: 'Podcast',
+        category: 'Podcast',
+        type: 'past',
         date: new Date('2026-02-05'),
         time: 'Available on all platforms',
         location: 'Spotify / Apple Podcasts / YouTube',
@@ -146,14 +144,13 @@ const EVENTS = [
         summary: 'Streamed over 12,000 times in its first week. Listeners praised the actionable framing of agentic risk. Full transcript and show notes are available on the website.',
         tags: ['Agentic AI', 'Enterprise Risk', 'Stanford'],
         featured: false,
-        registrationUrl: '#',
-        past: true,
         recordingUrl: '#',
     },
     {
-        id: 10,
+        id: 'static-10',
         title: 'AI Risk in Healthcare: Balancing Innovation & Patient Safety',
-        type: 'Seminar',
+        category: 'Seminar',
+        type: 'past',
         date: new Date('2026-02-12'),
         time: '10:00 AM – 12:30 PM EST',
         location: 'Boston, MA + Online',
@@ -162,19 +159,31 @@ const EVENTS = [
         summary: 'Panellists included FDA advisors and senior compliance leads from Boston Children\'s Hospital and Philips Healthcare. A follow-up white paper based on the discussion is being drafted for Council members.',
         tags: ['Healthcare', 'SaMD', 'Regulation'],
         featured: true,
-        registrationUrl: '#',
-        past: true,
         recordingUrl: '#',
     },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-const formatDate = (d) =>
-    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+const formatDateStr = (dObj) =>
+    dObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+const getCategoryKey = (cat) => {
+    if (!cat) return 'Webinar';
+    return cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase();
+};
 
 // ─── EventCard ───────────────────────────────────────────────────────────────
 const EventCard = ({ ev }) => {
-    const meta = TYPE_META[ev.type] || TYPE_META.Webinar;
+    const defaultCatKey = getCategoryKey(ev.category);
+    const meta = TYPE_META[defaultCatKey] || TYPE_META.Webinar;
+
+    let dateStr = ev.date;
+    if (ev.date instanceof Date) {
+        dateStr = formatDateStr(ev.date);
+    } else if (typeof ev.date === 'string' && ev.date.match(/^\d{4}-\d{2}-\d{2}/)) {
+        dateStr = formatDateStr(new Date(ev.date));
+    }
+
     return (
         <div
             style={{
@@ -190,7 +199,7 @@ const EventCard = ({ ev }) => {
             <div style={{ position: 'relative', height: '140px', overflow: 'hidden', flexShrink: 0 }}>
                 <img
                     src={meta.image}
-                    alt={ev.type}
+                    alt={defaultCatKey}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     onError={e => { e.target.style.display = 'none'; }}
                 />
@@ -201,9 +210,9 @@ const EventCard = ({ ev }) => {
                     fontSize: '0.7rem', fontWeight: '700', padding: '3px 10px',
                     borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px',
                 }}>
-                    {meta.icon} {ev.type}
+                    {meta.icon} {defaultCatKey}
                 </span>
-                {ev.past && (
+                {ev.type === 'past' && (
                     <span style={{
                         position: 'absolute', top: '10px', right: '10px',
                         background: 'rgba(0,0,0,0.55)', color: 'white',
@@ -218,17 +227,17 @@ const EventCard = ({ ev }) => {
             {/* Card body */}
             <div style={{ padding: '1.25rem', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                 <p style={{ fontSize: '0.78rem', color: '#64748B', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Calendar size={12} color={meta.color} /> {formatDate(ev.date)}
+                    <Calendar size={12} color={meta.color} /> {dateStr}
                 </p>
                 <h3 style={{ fontSize: '1.02rem', fontWeight: '700', color: '#1E293B', marginBottom: '0.55rem', lineHeight: '1.4' }}>
                     {ev.title}
                 </h3>
                 <p style={{ fontSize: '0.84rem', color: '#64748B', lineHeight: '1.6', flexGrow: 1, marginBottom: '0.9rem' }}>
-                    {ev.description}
+                    {ev.description || 'No description provided.'}
                 </p>
 
                 {/* Past event summary */}
-                {ev.past && ev.summary && (
+                {ev.type === 'past' && ev.summary && (
                     <div style={{ background: '#F8FAFC', borderLeft: '3px solid #003366', borderRadius: '0 6px 6px 0', padding: '10px 12px', marginBottom: '0.9rem' }}>
                         <p style={{ fontSize: '0.78rem', fontWeight: '700', color: '#003366', marginBottom: '4px' }}>Event Summary</p>
                         <p style={{ fontSize: '0.8rem', color: '#475569', lineHeight: '1.55', margin: 0 }}>{ev.summary}</p>
@@ -236,37 +245,41 @@ const EventCard = ({ ev }) => {
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '0.9rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.79rem', color: '#475569' }}>
-                        <Clock size={12} color={meta.color} /> {ev.time}
-                    </span>
+                    {ev.time && (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.79rem', color: '#475569' }}>
+                            <Clock size={12} color={meta.color} /> {ev.time}
+                        </span>
+                    )}
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.79rem', color: '#475569' }}>
                         <MapPin size={12} color={meta.color} /> {ev.location}
                     </span>
-                    {ev.attendees !== '—' && (
+                    {ev.attendees && ev.attendees !== '—' && (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.79rem', color: '#475569' }}>
-                            <Users size={12} color={meta.color} /> {ev.attendees} {ev.past ? 'attended' : 'expected'}
+                            <Users size={12} color={meta.color} /> {ev.attendees} {ev.type === 'past' ? 'attended' : 'expected'}
                         </span>
                     )}
                 </div>
 
                 {/* Tags */}
-                <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '1rem' }}>
-                    {ev.tags.map(tag => (
-                        <span key={tag} style={{ background: '#F1F5F9', color: '#475569', fontSize: '0.68rem', fontWeight: '600', padding: '2px 7px', borderRadius: '4px' }}>
-                            {tag}
-                        </span>
-                    ))}
-                </div>
+                {ev.tags && ev.tags.length > 0 && (
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                        {ev.tags.map(tag => (
+                            <span key={tag} style={{ background: '#F1F5F9', color: '#475569', fontSize: '0.68rem', fontWeight: '600', padding: '2px 7px', borderRadius: '4px' }}>
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                )}
 
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    {ev.past ? (
-                        ev.recordingUrl ? (
-                            <a href={ev.recordingUrl} style={{
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {ev.type === 'past' ? (
+                        ev.recording_url || ev.recordingUrl || ev.link ? (
+                            <a href={ev.recording_url || ev.recordingUrl || ev.link} target="_blank" rel="noopener noreferrer" style={{
                                 flexGrow: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                                 background: '#003366', color: 'white', padding: '0.55rem 1rem',
                                 borderRadius: '6px', fontWeight: '700', fontSize: '0.82rem', textDecoration: 'none',
                             }}>
-                                Watch Recording <ArrowRight size={13} />
+                                <Video size={13} /> Watch Recording <ArrowRight size={13} />
                             </a>
                         ) : (
                             <span style={{ flexGrow: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0.55rem 1rem', background: '#F1F5F9', color: '#94A3B8', borderRadius: '6px', fontWeight: '600', fontSize: '0.82rem' }}>
@@ -274,16 +287,30 @@ const EventCard = ({ ev }) => {
                             </span>
                         )
                     ) : (
-                        <a href={ev.registrationUrl} style={{
-                            flexGrow: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                            background: '#003366', color: 'white', padding: '0.55rem 1rem',
-                            borderRadius: '6px', fontWeight: '700', fontSize: '0.82rem', textDecoration: 'none',
-                        }}
-                            onMouseOver={e => e.currentTarget.style.background = '#00509E'}
-                            onMouseOut={e => e.currentTarget.style.background = '#003366'}
-                        >
-                            Register Now <ArrowRight size={13} />
-                        </a>
+                        <>
+                            {ev.teams_link && (
+                                <a href={ev.teams_link} target="_blank" rel="noopener noreferrer" style={{
+                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                    background: '#5B5FC7', color: 'white', padding: '0.55rem 1rem',
+                                    borderRadius: '6px', fontWeight: '700', fontSize: '0.82rem', textDecoration: 'none',
+                                }}
+                                    onMouseOver={e => e.currentTarget.style.background = '#4B4FB7'}
+                                    onMouseOut={e => e.currentTarget.style.background = '#5B5FC7'}
+                                >
+                                    <Monitor size={13} /> Join on Teams
+                                </a>
+                            )}
+                            <a href={ev.registrationUrl || ev.link || '#'} style={{
+                                flexGrow: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                background: '#003366', color: 'white', padding: '0.55rem 1rem',
+                                borderRadius: '6px', fontWeight: '700', fontSize: '0.82rem', textDecoration: 'none',
+                            }}
+                                onMouseOver={e => e.currentTarget.style.background = '#00509E'}
+                                onMouseOut={e => e.currentTarget.style.background = '#003366'}
+                            >
+                                Register Now <ArrowRight size={13} />
+                            </a>
+                        </>
                     )}
                 </div>
             </div>
@@ -293,16 +320,26 @@ const EventCard = ({ ev }) => {
 
 // ─── Main Events Page ─────────────────────────────────────────────────────────
 const Events = () => {
-    const [activeType, setActiveType] = useState('All');
+    const [eventsData, setEventsData] = useState(STATIC_EVENTS);
+    const [activeCategory, setActiveCategory] = useState('All');
     const [activeTab, setActiveTab] = useState('upcoming'); // 'upcoming' | 'past'
 
-    const now = new Date('2026-02-23');
+    useEffect(() => {
+        // Fetch events from backend and merge with STATIC_EVENTS
+        fetch(`${API}/events`)
+            .then(res => res.json())
+            .then(data => {
+                const combined = [...data, ...STATIC_EVENTS];
+                setEventsData(combined);
+            })
+            .catch(err => console.error('Error fetching events:', err));
+    }, []);
 
-    const upcoming = EVENTS.filter(e => !e.past);
-    const past = EVENTS.filter(e => e.past);
+    const upcoming = eventsData.filter(e => e.type === 'upcoming');
+    const past = eventsData.filter(e => e.type === 'past');
 
     const applyFilter = (list) =>
-        activeType === 'All' ? list : list.filter(e => e.type === activeType);
+        activeCategory === 'All' ? list : list.filter(e => getCategoryKey(e.category) === activeCategory);
 
     const displayList = activeTab === 'upcoming' ? applyFilter(upcoming) : applyFilter(past);
 
@@ -347,25 +384,34 @@ const Events = () => {
                         <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#1E293B', marginBottom: '1.5rem' }}>⭐ Featured Upcoming Events</h2>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(440px, 1fr))', gap: '1.5rem' }}>
                             {featuredUpcoming.map(ev => {
-                                const meta = TYPE_META[ev.type];
+                                const defaultCatKey = getCategoryKey(ev.category);
+                                const meta = TYPE_META[defaultCatKey] || TYPE_META.Webinar;
+
+                                let dateStr = ev.date;
+                                if (ev.date instanceof Date) {
+                                    dateStr = formatDateStr(ev.date);
+                                } else if (typeof ev.date === 'string' && ev.date.match(/^\d{4}-\d{2}-\d{2}/)) {
+                                    dateStr = formatDateStr(new Date(ev.date));
+                                }
+
                                 return (
                                     <div key={ev.id} style={{
                                         background: 'linear-gradient(135deg, #002244 0%, #004080 100%)',
                                         borderRadius: '16px', overflow: 'hidden',
                                         boxShadow: '0 8px 32px rgba(0,51,102,0.25)', display: 'flex', flexDirection: 'column',
                                     }}>
-                                        <img src={meta.image} alt={ev.type} style={{ width: '100%', height: '160px', objectFit: 'cover', opacity: 0.75 }} />
+                                        <img src={meta.image} alt={defaultCatKey} style={{ width: '100%', height: '160px', objectFit: 'cover', opacity: 0.75 }} />
                                         <div style={{ padding: '1.75rem', color: 'white', flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
                                             <span style={{ background: meta.bg, color: meta.color, fontSize: '0.72rem', fontWeight: '700', padding: '3px 11px', borderRadius: '20px', display: 'inline-flex', alignItems: 'center', gap: '5px', alignSelf: 'flex-start', marginBottom: '0.9rem' }}>
-                                                {meta.icon} {ev.type}
+                                                {meta.icon} {defaultCatKey}
                                             </span>
                                             <h3 style={{ fontSize: '1.35rem', fontWeight: '800', marginBottom: '0.65rem', lineHeight: '1.3', color: 'white', textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}>{ev.title}</h3>
                                             <p style={{ color: '#CBD5E1', fontSize: '0.9rem', lineHeight: '1.65', flexGrow: 1, marginBottom: '1.25rem' }}>{ev.description}</p>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '1.25rem' }}>
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#BAE6FD', fontSize: '0.85rem' }}><Calendar size={13} /> {formatDate(ev.date)} &nbsp;|&nbsp; <Clock size={13} /> {ev.time}</span>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#BAE6FD', fontSize: '0.85rem' }}><Calendar size={13} /> {dateStr} {ev.time ? ` | ${ev.time}` : ''}</span>
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#BAE6FD', fontSize: '0.85rem' }}><MapPin size={13} /> {ev.location}</span>
                                             </div>
-                                            <a href={ev.registrationUrl} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'white', color: '#003366', padding: '0.6rem 1.4rem', borderRadius: '6px', fontWeight: '700', fontSize: '0.87rem', textDecoration: 'none', alignSelf: 'flex-start' }}>
+                                            <a href={ev.registrationUrl || ev.link || '#'} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', background: 'white', color: '#003366', padding: '0.6rem 1.4rem', borderRadius: '6px', fontWeight: '700', fontSize: '0.87rem', textDecoration: 'none', alignSelf: 'flex-start' }}>
                                                 Register Now <ArrowRight size={14} />
                                             </a>
                                         </div>
@@ -399,17 +445,17 @@ const Events = () => {
                             ))}
                         </div>
 
-                        {/* Type filter pills */}
+                        {/* Category filter pills */}
                         <div style={{ display: 'flex', gap: '7px', flexWrap: 'wrap' }}>
-                            {ALL_TYPES.map(type => (
-                                <button key={type} onClick={() => setActiveType(type)} style={{
+                            {ALL_CATEGORIES.map(cat => (
+                                <button key={cat} onClick={() => setActiveCategory(cat)} style={{
                                     padding: '5px 15px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: '600', cursor: 'pointer',
-                                    border: '1px solid', borderColor: activeType === type ? '#003366' : '#CBD5E1',
-                                    background: activeType === type ? '#003366' : 'white',
-                                    color: activeType === type ? 'white' : '#475569',
+                                    border: '1px solid', borderColor: activeCategory === cat ? '#003366' : '#CBD5E1',
+                                    background: activeCategory === cat ? '#003366' : 'white',
+                                    color: activeCategory === cat ? 'white' : '#475569',
                                     transition: 'all 0.15s',
                                 }}>
-                                    {type}
+                                    {cat}
                                 </button>
                             ))}
                         </div>

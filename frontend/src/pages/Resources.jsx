@@ -427,9 +427,11 @@ const TYPE_ICONS = {
     tool: <Globe size={12} />,
     news: <FileText size={12} />,
     'homepage video': <Video size={12} />,
+    'lab result': <FileText size={12} />,
+    product: <Globe size={12} />,
 };
 
-const TYPE_OPTIONS = ['article', 'whitepaper', 'video', 'tool', 'news', 'homepage video'];
+const TYPE_OPTIONS = ['article', 'whitepaper', 'video', 'tool', 'news', 'homepage video', 'lab result', 'product'];
 const ACCESS_OPTIONS = ['public', 'registered'];
 
 const formatDate = (d) => {
@@ -438,14 +440,18 @@ const formatDate = (d) => {
 };
 
 // ---- Upload / Edit Modal (Admin only) ----
-const ResourceModal = ({ resource, onClose, onSaved, token }) => {
+const ResourceModal = ({ resource, onClose, onSaved, token, isAdmin, user }) => {
     const isEdit = !!resource;
+    const isUniversity = user?.role === 'university';
+    const isCompany = user?.role === 'company';
+    const defaultType = isAdmin ? 'article' : isUniversity ? 'whitepaper' : isCompany ? 'product' : 'article';
+
     const [form, setForm] = useState({
         title: resource?.title || '',
         summary: resource?.summary || '',
         source_url: resource?.source_url || '',
         category_slug: resource?.category_slug || '',
-        type: resource?.type || 'article',
+        type: resource?.type || defaultType,
         access_level: resource?.access_level || 'public',
     });
     const [file, setFile] = useState(null);
@@ -514,7 +520,7 @@ const ResourceModal = ({ resource, onClose, onSaved, token }) => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <div>
                             <label style={labelStyle}>Type</label>
-                            <select name="type" value={form.type} onChange={handleChange} style={inputStyle}>
+                            <select name="type" value={form.type} onChange={handleChange} style={inputStyle} disabled={!isAdmin}>
                                 {TYPE_OPTIONS.map(t => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
                             </select>
                         </div>
@@ -563,7 +569,7 @@ const ResourceModal = ({ resource, onClose, onSaved, token }) => {
 
 // ---- Main Resources Page ----
 const Resources = () => {
-    const { user, token, isAdmin, isMember, isLoggedIn } = useAuth();
+    const { user, token, isAdmin, isMember, isLoggedIn, isUniversity, isCompany } = useAuth();
 
     const [resources, setResources] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -759,8 +765,8 @@ const Resources = () => {
                 {/* Grid */}
                 <div className="resources-grid-wrapper">
 
-                    {/* Admin Upload Button */}
-                    {isAdmin && (
+                    {/* Upload Button */}
+                    {(isAdmin || isUniversity || isCompany) && (
                         <div style={{ marginBottom: '1.5rem' }}>
                             <button
                                 onClick={() => setModal({ mode: 'create' })}
@@ -772,7 +778,7 @@ const Resources = () => {
                                     fontFamily: 'var(--font-sans)'
                                 }}
                             >
-                                <Plus size={16} /> Upload Resource
+                                <Plus size={16} /> Upload Resource {isAdmin ? '' : '(Pending Approval)'}
                             </button>
                         </div>
                     )}
@@ -892,6 +898,8 @@ const Resources = () => {
                     onClose={() => setModal(null)}
                     onSaved={handleSaved}
                     token={token}
+                    isAdmin={isAdmin}
+                    user={user}
                 />
             )}
 

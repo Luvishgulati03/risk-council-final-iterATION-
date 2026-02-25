@@ -94,6 +94,9 @@ const Header = () => {
                                                 </Link>
                                             </>
                                         )}
+                                        <Link to="/profile" onClick={() => setUserMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none' }}>
+                                            <User size={14} /> My Profile
+                                        </Link>
                                         <Link to="/membership" onClick={() => setUserMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1rem', color: 'var(--text-secondary)', fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none' }}>
                                             <User size={14} /> My Account
                                         </Link>

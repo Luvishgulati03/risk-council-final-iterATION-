@@ -33,7 +33,7 @@ const authOptional = (req, res, next) => {
 
 // Must be admin role — use AFTER authRequired
 const adminOnly = (req, res, next) => {
-    if (req.user?.role !== 'admin') {
+    if (req.user?.role !== 'admin' && req.user?.role !== 'executive') {
         return res.status(403).json({ error: 'Admin access required' });
     }
     next();

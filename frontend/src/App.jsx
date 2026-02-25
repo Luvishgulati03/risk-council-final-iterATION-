@@ -8,7 +8,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Home from './pages/Home';
 import About from './pages/About';
 import Framework from './pages/Framework';
-import Assessment from './pages/Assessment';
+// import Assessment from './pages/Assessment';
 import Services from './pages/Services';
 import Resources from './pages/Resources';
 import Certifications from './pages/Certifications';
@@ -17,6 +17,9 @@ import Contact from './pages/Contact';
 import RiskDomain from './pages/RiskDomain';
 import CommunityQnA from './pages/CommunityQnA';
 import Events from './pages/Events';
+import ProductReviews from './pages/ProductReviews';
+import Workshops from './pages/Workshops';
+import Profile from './pages/Profile';
 
 function App() {
   const { pathname } = useLocation();
@@ -35,8 +38,10 @@ function App() {
           <Route path="/risk-domains/:id" element={<RiskDomain />} />
           <Route path="/about" element={<About />} />
           <Route path="/framework" element={<Framework />} />
-          <Route path="/assessment" element={<Assessment />} />
+          {/* <Route path="/assessment" element={<Assessment />} /> */}
           <Route path="/services" element={<Services />} />
+          <Route path="/services/product-reviews" element={<ProductReviews />} />
+          <Route path="/services/workshops" element={<Workshops />} />
           <Route path="/resources" element={<Resources />} />
           <Route path="/certifications" element={<Certifications />} />
           <Route path="/membership" element={<Membership />} />
@@ -45,6 +50,7 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/community" element={<CommunityQnA />} />
           <Route path="/events" element={<Events />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </main>
       <Footer />

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Section from '../components/Section';
 import { pillars } from '../mockData';
-import { CheckCircle, AlertTriangle, FileText, ClipboardList, ChevronRight } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { CheckCircle, AlertTriangle, FileText, ClipboardList, ChevronRight, BookOpen, Download, Lock } from 'lucide-react';
 
 // ─── Content for each section ─────────────────────────────────────────────────
 
@@ -345,12 +346,237 @@ const AuditTemplatesSection = () => (
     </div>
 );
 
+// ─── Security Tools Section ──────────────────────────────────────────────────
+const SECURITY_TOOLS = [
+    {
+        name: 'Microsoft Purview',
+        company: 'Microsoft',
+        category: 'Data Governance & Compliance',
+        color: '#0078D4',
+        description: 'Unified data governance platform for managing and governing on-premises, multi-cloud, and SaaS data. Provides data discovery, classification, lineage tracking, and compliance management.',
+        capabilities: ['Data classification & labeling', 'Information protection policies', 'Data loss prevention (DLP)', 'Compliance Manager with regulatory templates', 'Insider risk management'],
+        frameworkAlignment: 'Essential for EU AI Act Article 10 (Data Governance) and GDPR compliance in AI training data pipelines.'
+    },
+    {
+        name: 'Microsoft Defender for Endpoint',
+        company: 'Microsoft',
+        category: 'Endpoint Detection & Response',
+        color: '#0078D4',
+        description: 'Enterprise endpoint security platform using behavioral sensors, cloud analytics, and threat intelligence for real-time protection of AI/ML workstations and inference endpoints.',
+        capabilities: ['Automated investigation & response', 'Attack surface reduction rules', 'Endpoint detection and response (EDR)', 'Threat & vulnerability management', 'Microsoft Threat Experts integration'],
+        frameworkAlignment: 'Maps to NIST AI RMF GOVERN 1.5 (Infrastructure Security) and ISO 27001 Annex A controls.'
+    },
+    {
+        name: 'Microsoft Sentinel',
+        company: 'Microsoft',
+        category: 'SIEM / SOAR',
+        color: '#0078D4',
+        description: 'Cloud-native SIEM and SOAR solution providing AI-driven threat detection, intelligent security analytics, and automated response playbooks across the enterprise.',
+        capabilities: ['AI-driven anomaly detection', 'Automated incident response playbooks', 'Cross-platform log ingestion', 'UEBA (User & Entity Behavior Analytics)', 'Threat intelligence fusion'],
+        frameworkAlignment: 'Supports NIST AI RMF DETECT function and continuous monitoring requirements in ISO 42001.'
+    },
+    {
+        name: 'CrowdStrike Falcon',
+        company: 'CrowdStrike',
+        category: 'EDR & Threat Intelligence',
+        color: '#FF0000',
+        description: 'Cloud-native endpoint protection combining next-gen antivirus, EDR, threat intelligence, and managed threat hunting. Uses AI-powered indicators of attack (IOAs) for real-time breach prevention.',
+        capabilities: ['AI-powered threat prevention', 'Managed threat hunting (Falcon OverWatch)', 'Cloud workload protection', 'Identity threat detection', 'Adversary intelligence feeds'],
+        frameworkAlignment: 'Critical for securing AI training infrastructure. Aligns with NIST CSF Detect and Respond functions.'
+    },
+    {
+        name: 'Palo Alto Prisma Cloud',
+        company: 'Palo Alto Networks',
+        category: 'Cloud Security (CNAPP)',
+        color: '#FA582D',
+        description: 'Comprehensive cloud-native application protection platform securing hosts, containers, serverless functions, and multi-cloud infrastructure where AI workloads are deployed.',
+        capabilities: ['Cloud Security Posture Management (CSPM)', 'Cloud Workload Protection (CWP)', 'Container and Kubernetes security', 'Infrastructure as Code (IaC) scanning', 'API security and web app firewall'],
+        frameworkAlignment: 'Essential for securing cloud-based AI/ML pipelines. Maps to ISO 27017 cloud security controls.'
+    },
+    {
+        name: 'Splunk Enterprise Security',
+        company: 'Cisco / Splunk',
+        category: 'SIEM & Security Analytics',
+        color: '#65A637',
+        description: 'Premium SIEM providing security analytics, threat detection, and incident response. Ingests machine data from virtually any source to surface real-time insights into AI model behavior and infrastructure security.',
+        capabilities: ['Real-time correlation and alerting', 'Risk-based alerting (RBA)', 'MITRE ATT&CK framework mapping', 'Custom dashboards and reporting', 'Machine learning anomaly detection'],
+        frameworkAlignment: 'Supports continuous monitoring per NIST AI RMF and audit trail requirements for EU AI Act compliance.'
+    },
+    {
+        name: 'IBM Guardium',
+        company: 'IBM',
+        category: 'Data Security & Privacy',
+        color: '#054ADA',
+        description: 'Comprehensive data security platform providing activity monitoring, automated compliance workflows, vulnerability assessment, and encryption for AI training data across databases and cloud environments.',
+        capabilities: ['Real-time data activity monitoring', 'Automated compliance reporting', 'Data encryption and key management', 'Vulnerability assessment', 'Dynamic data masking'],
+        frameworkAlignment: 'Directly supports GDPR Article 32 (Security of Processing) and NIST AI RMF data protection requirements.'
+    },
+    {
+        name: 'Qualys VMDR',
+        company: 'Qualys',
+        category: 'Vulnerability Management',
+        color: '#FF0000',
+        description: 'Cloud-based VMDR providing global visibility into IT assets, automated vulnerability detection, threat prioritization using real-time intelligence, and integrated patch management for secure AI deployment infrastructure.',
+        capabilities: ['Continuous asset discovery', 'Risk-based vulnerability prioritization', 'Integrated patch management', 'CIS benchmark compliance scanning', 'Real-time threat intelligence correlation'],
+        frameworkAlignment: 'Addresses NIST AI RMF infrastructure hardening requirements and ISO 27001 vulnerability management controls.'
+    }
+];
+
+const SecurityToolsSection = () => (
+    <div>
+        <h2 style={{ marginBottom: '0.5rem', color: '#1E293B' }}>Security Tools & Solutions</h2>
+        <p style={{ color: '#64748B', marginBottom: '1.5rem', fontSize: '0.95rem' }}>
+            Enterprise-grade security tools that organizations can leverage alongside our governance playbooks. These are tools we recommend and review — not products we sell.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {SECURITY_TOOLS.map((tool, idx) => (
+                <div key={idx} style={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden', transition: 'box-shadow 0.2s' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '1rem 1.5rem', background: '#FAFAFA', borderBottom: '1px solid #F1F5F9' }}>
+                        <div style={{ width: '8px', height: '40px', background: tool.color, borderRadius: '4px', flexShrink: 0 }} />
+                        <div style={{ flexGrow: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '2px', flexWrap: 'wrap' }}>
+                                <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#1E293B' }}>{tool.name}</h3>
+                                <span style={{ fontSize: '0.7rem', fontWeight: '700', color: 'white', background: tool.color, padding: '2px 8px', borderRadius: '4px' }}>{tool.company}</span>
+                                <span style={{ fontSize: '0.68rem', fontWeight: '600', color: '#64748B', background: '#F1F5F9', padding: '2px 8px', borderRadius: '4px', marginLeft: 'auto' }}>{tool.category}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ padding: '1.1rem 1.5rem' }}>
+                        <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: '1.65', margin: '0 0 1rem' }}>{tool.description}</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div>
+                                <p style={{ fontSize: '0.72rem', fontWeight: '700', color: tool.color, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>Key Capabilities</p>
+                                <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    {tool.capabilities.map((c, i) => (
+                                        <li key={i} style={{ display: 'flex', gap: '6px', alignItems: 'flex-start', fontSize: '0.82rem', color: '#475569' }}>
+                                            <CheckCircle size={12} color={tool.color} style={{ flexShrink: 0, marginTop: '3px' }} /> {c}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                            <div>
+                                <p style={{ fontSize: '0.72rem', fontWeight: '700', color: '#16A34A', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>Framework Alignment</p>
+                                <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.6', margin: 0 }}>{tool.frameworkAlignment}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+// ─── Playbooks Section ─────────────────────────────────────────────────────────
+const PlaybooksSection = () => {
+    const { token, isLoggedIn, API } = useAuth();
+    const [playbooks, setPlaybooks] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetch('http://localhost:5000/api/playbooks')
+            .then(r => r.json())
+            .then(data => { setPlaybooks(data); setLoading(false); })
+            .catch(() => setLoading(false));
+    }, []);
+
+    const handleDownload = async (pb) => {
+        if (!isLoggedIn) {
+            alert('Please sign in to download playbooks. All registered members can download for free.');
+            return;
+        }
+        try {
+            const res = await fetch(`http://localhost:5000/api/playbooks/${pb.id}/download`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) throw new Error('Download failed');
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = pb.file_name || `${pb.title}.${pb.file_type}`;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) { alert('Download failed. Please try again.'); }
+    };
+
+    const FRAMEWORK_COLORS = {
+        'EU AI Act': { bg: '#EFF6FF', color: '#1D4ED8', border: '#BFDBFE' },
+        'NIST AI RMF': { bg: '#F0FDF4', color: '#16A34A', border: '#BBF7D0' },
+        'ISO 42001': { bg: '#FAF5FF', color: '#7C3AED', border: '#E9D5FF' },
+        'GDPR': { bg: '#FEF2F2', color: '#DC2626', border: '#FECACA' },
+        'General': { bg: '#F8FAFC', color: '#475569', border: '#E2E8F0' },
+    };
+
+    const CATEGORY_ICONS = { Guide: '📖', Checklist: '✅', Template: '📋', Policy: '📜' };
+
+    const grouped = playbooks.reduce((acc, pb) => {
+        const fw = pb.framework || 'General';
+        if (!acc[fw]) acc[fw] = [];
+        acc[fw].push(pb);
+        return acc;
+    }, {});
+
+    if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748B' }}>Loading playbooks...</div>;
+
+    return (
+        <div>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: '800', color: '#1E293B', marginBottom: '8px' }}>Governance Playbooks</h2>
+            <p style={{ color: '#64748B', lineHeight: '1.7', marginBottom: '2rem', maxWidth: '700px' }}>
+                Download comprehensive governance playbooks aligned with major AI risk frameworks. These self-service resources include templates, checklists, and step-by-step implementation guides.
+                {!isLoggedIn && <span style={{ display: 'block', marginTop: '8px', color: '#D97706', fontWeight: '600', fontSize: '0.88rem' }}><Lock size={13} style={{ verticalAlign: 'middle', marginRight: '4px' }} />Sign in to download — free for all registered members.</span>}
+            </p>
+
+            {Object.entries(grouped).map(([framework, items]) => {
+                const fwStyle = FRAMEWORK_COLORS[framework] || FRAMEWORK_COLORS['General'];
+                return (
+                    <div key={framework} style={{ marginBottom: '2rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                            <span style={{ background: fwStyle.bg, color: fwStyle.color, border: `1px solid ${fwStyle.border}`, padding: '4px 14px', borderRadius: '20px', fontSize: '0.82rem', fontWeight: '700' }}>{framework}</span>
+                            <span style={{ fontSize: '0.8rem', color: '#94A3B8' }}>{items.length} playbook{items.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <div style={{ display: 'grid', gap: '12px' }}>
+                            {items.map(pb => (
+                                <div key={pb.id} style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '10px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', transition: 'box-shadow 0.2s' }}
+                                    onMouseOver={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.06)'}
+                                    onMouseOut={e => e.currentTarget.style.boxShadow = 'none'}
+                                >
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                                            <span style={{ fontSize: '1.1rem' }}>{CATEGORY_ICONS[pb.category] || '📄'}</span>
+                                            <h4 style={{ margin: 0, fontSize: '1rem', color: '#1E293B' }}>{pb.title}</h4>
+                                            <span style={{ fontSize: '0.68rem', fontWeight: '600', color: '#475569', background: '#F1F5F9', padding: '2px 7px', borderRadius: '4px' }}>{pb.category}</span>
+                                            <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#64748B', background: '#E2E8F0', padding: '2px 7px', borderRadius: '4px', textTransform: 'uppercase' }}>{pb.file_type}</span>
+                                        </div>
+                                        {pb.brief && <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748B', lineHeight: '1.55' }}>{pb.brief}</p>}
+                                    </div>
+                                    <button onClick={() => handleDownload(pb)} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 20px', background: isLoggedIn ? '#003366' : '#94A3B8', color: 'white', border: 'none', borderRadius: '8px', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s' }}>
+                                        {isLoggedIn ? <><Download size={14} /> Download</> : <><Lock size={14} /> Sign In</>}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })}
+
+            {playbooks.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '3rem', background: '#F8FAFC', borderRadius: '12px', border: '1px solid #E2E8F0' }}>
+                    <BookOpen size={40} color="#94A3B8" style={{ marginBottom: '8px' }} />
+                    <p style={{ color: '#94A3B8', margin: 0 }}>No playbooks available yet. Check back soon!</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
 // ─── Nav items ────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
     { key: 'pillars', label: 'Core Pillars', component: CorePillarsSection },
     { key: 'maturity', label: 'Maturity Levels', component: MaturityLevelsSection },
     { key: 'implementation', label: 'Implementation Guide', component: ImplementationGuideSection },
     { key: 'audit', label: 'Audit Templates', component: AuditTemplatesSection },
+    { key: 'tools', label: 'Security Tools & Solutions', component: SecurityToolsSection },
+    { key: 'playbooks', label: 'Governance Playbooks', component: PlaybooksSection },
 ];
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

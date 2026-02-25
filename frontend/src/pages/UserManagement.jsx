@@ -88,7 +88,7 @@ const UserManagement = () => {
     const [toast, setToast] = useState(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(null); // user to delete
-    const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role: 'user' });
+    const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role: 'user', organization_name: '', gst: '', pan: '', incorporation_number: '', phone: '' });
     const [createLoading, setCreateLoading] = useState(false);
 
     useEffect(() => {
@@ -180,7 +180,7 @@ const UserManagement = () => {
             if (res.ok) {
                 showToast(`${createForm.role} account created for ${createForm.name}`);
                 setShowCreateModal(false);
-                setCreateForm({ name: '', email: '', password: '', role: 'user' });
+                setCreateForm({ name: '', email: '', password: '', role: 'user', organization_name: '', gst: '', pan: '', incorporation_number: '', phone: '' });
                 fetchUsers();
             } else {
                 showToast(data.error, 'error');
@@ -305,6 +305,19 @@ const UserManagement = () => {
                                                             {u.name} {isSelf && <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '400' }}>(you)</span>}
                                                         </p>
                                                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{u.email}</p>
+                                                        {(u.organization_name || u.gst || u.pan || u.phone || u.incorporation_number) && (
+                                                            <div style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                                                {u.organization_name && <span style={{ fontSize: '0.75rem', color: '#0369A1', fontWeight: '600' }}>🏢 {u.organization_name}</span>}
+                                                                {u.phone && <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>📞 {u.phone}</span>}
+                                                                {u.role === 'company' && (
+                                                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '4px' }}>
+                                                                        {u.gst && <Badge role="user" customLabel={`GST: ${u.gst}`} />}
+                                                                        {u.pan && <Badge role="user" customLabel={`PAN: ${u.pan}`} />}
+                                                                        {u.incorporation_number && <Badge role="user" customLabel={`Inc: ${u.incorporation_number}`} />}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
@@ -400,7 +413,23 @@ const UserManagement = () => {
             {/* Create User Modal */}
             {showCreateModal && (
                 <Modal title="Create New User" onClose={() => setShowCreateModal(false)}>
-                    <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '70vh', overflowY: 'auto', paddingRight: '10px' }}>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)' }}>Role</label>
+                            <select
+                                value={createForm.role}
+                                onChange={e => setCreateForm(prev => ({ ...prev, role: e.target.value }))}
+                                style={{ ...inputStyle }}
+                            >
+                                <option value="user">User — Public access only</option>
+                                <option value="member">Member — Member-only resources</option>
+                                <option value="university">University / Educational Institution</option>
+                                <option value="company">Corporate / Product Company</option>
+                                <option value="admin">Admin — Full access</option>
+                                <option value="executive">Executive — Secondary Admin</option>
+                            </select>
+                        </div>
+
                         {[
                             { label: 'Full Name', name: 'name', type: 'text', placeholder: 'Jane Smith' },
                             { label: 'Email Address', name: 'email', type: 'email', placeholder: 'jane@example.com' },
@@ -416,18 +445,61 @@ const UserManagement = () => {
                                 />
                             </div>
                         ))}
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)' }}>Role</label>
-                            <select
-                                value={createForm.role}
-                                onChange={e => setCreateForm(prev => ({ ...prev, role: e.target.value }))}
-                                style={{ ...inputStyle }}
-                            >
-                                <option value="user">User — Public access only</option>
-                                <option value="member">Member — Member-only resources</option>
-                                <option value="admin">Admin — Full access</option>
-                            </select>
-                        </div>
+
+                        {(createForm.role === 'university' || createForm.role === 'company') && (
+                            <>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)' }}>Organization Name</label>
+                                    <input
+                                        type="text" name="organization_name" placeholder={createForm.role === 'company' ? 'Acme Corp' : 'Harvard University'} required
+                                        value={createForm.organization_name || ''}
+                                        onChange={e => setCreateForm(prev => ({ ...prev, organization_name: e.target.value }))}
+                                        style={inputStyle}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)' }}>Phone Number</label>
+                                    <input
+                                        type="tel" name="phone" placeholder="+1 234 567 8900" required
+                                        value={createForm.phone || ''}
+                                        onChange={e => setCreateForm(prev => ({ ...prev, phone: e.target.value }))}
+                                        style={inputStyle}
+                                    />
+                                </div>
+                            </>
+                        )}
+                        {createForm.role === 'company' && (
+                            <>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)' }}>GST Number</label>
+                                    <input
+                                        type="text" name="gst" placeholder="Optional"
+                                        value={createForm.gst || ''}
+                                        onChange={e => setCreateForm(prev => ({ ...prev, gst: e.target.value }))}
+                                        style={inputStyle}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)' }}>PAN Number</label>
+                                    <input
+                                        type="text" name="pan" placeholder="Optional"
+                                        value={createForm.pan || ''}
+                                        onChange={e => setCreateForm(prev => ({ ...prev, pan: e.target.value }))}
+                                        style={inputStyle}
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)' }}>Incorporation Number</label>
+                                    <input
+                                        type="text" name="incorporation_number" placeholder="Optional"
+                                        value={createForm.incorporation_number || ''}
+                                        onChange={e => setCreateForm(prev => ({ ...prev, incorporation_number: e.target.value }))}
+                                        style={inputStyle}
+                                    />
+                                </div>
+                            </>
+                        )}
+
                         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
                             <button type="button" onClick={() => setShowCreateModal(false)} style={{
                                 flex: 1, padding: '0.75rem', background: 'none',

@@ -49,11 +49,12 @@ export const AuthProvider = ({ children }) => {
         return data.user;
     };
 
-    const register = async (name, email, password) => {
+    const register = async (name, email, password, role, organization_name, gst, pan, incorporation_number, phone) => {
+        const payload = { name, email, password, role, organization_name, gst, pan, incorporation_number, phone };
         const res = await fetch(`${API}/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, password })
+            body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Registration failed');
@@ -70,8 +71,10 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Role helpers
-    const isAdmin = user?.role === 'admin';
-    const isMember = user?.role === 'member' || user?.role === 'admin';
+    const isAdmin = user?.role === 'admin' || user?.role === 'executive';
+    const isMember = user?.role === 'member' || isAdmin;
+    const isUniversity = user?.role === 'university';
+    const isCompany = user?.role === 'company';
     const isLoggedIn = !!user;
 
     // Authenticated fetch helper
@@ -91,6 +94,7 @@ export const AuthProvider = ({ children }) => {
             user, token, loading,
             login, register, logout,
             isAdmin, isMember, isLoggedIn,
+            isUniversity, isCompany,
             authFetch, API
         }}>
             {children}
